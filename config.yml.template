@@ -1,0 +1,12 @@
+token:
+  browser:
+    # sec
+    expires: 18000
+  backend:
+    # min
+    expires: 1440
+    # JWTトークンの署名に使用されるランダムな秘密鍵を生成(以下の鍵は例)
+    # openssl rand -hex 32
+    SECRET_KEY: '###########################################'
+    # JWTトークンの署名に使用するアルゴリズム
+    ALGORITHM: 'HS256'

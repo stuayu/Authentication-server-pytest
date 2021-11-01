@@ -1,0 +1,16 @@
+version: '3'
+
+services:
+  auth:
+    image: python:latest
+    container_name: auth_server
+    volumes:
+      - .:/auth/root/
+    working_dir: /auth/root/
+    ports:
+      - "8000:8000"
+    restart: always
+    command: > 
+      bash -c 'python -m pip install --upgrade pip &&
+      pip install -r requirements.txt &&
+      uvicorn main:app --host 0.0.0.0'
