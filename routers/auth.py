@@ -46,7 +46,7 @@ async def login_for_access_token(response: Response,form_data: OAuth2PasswordReq
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
+            detail="ユーザー名かパスワードが違います。大文字小文字をよく確かめ入力してください。",
             headers={"WWW-Authenticate": "Bearer"},
         )
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -86,11 +86,17 @@ async def read_own_items(current_user: User = Depends(get_current_active_user)):
     return [{"item_id": "Foo", "owner": current_user.username}]
 
 @router.get("/users/check")
-async def header_ck(request: Request):
+async def header_ck(request: Request,response: Response):
     """ヘッダーのtokenを読み取りログイン状態を確認する"""
     token = request.cookies.get('token')
     if token is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
     pre_data = await get_current_user(token=token)
     current_user: User = await get_current_active_user(pre_data)
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": current_user.username}, expires_delta=access_token_expires
+    )
+    #data = {"access_token": access_token, "token_type": "bearer"}
+    response.set_cookie(key='token',value=access_token,httponly=True,secure=True,expires=config['token']['browser']['expires'])
     #print(current_user)

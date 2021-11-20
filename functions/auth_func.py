@@ -38,9 +38,14 @@ def get_password_hash(password):
 def get_user(username: str):
     db = search_username(cur,username)
     #print(db)
-    if username in db['username']:
-        user_dict = db
-        return UserInDB(**user_dict)
+    try:
+        if username in db['username']:
+            user_dict = db
+            return UserInDB(**user_dict)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+        detail='ユーザー名が存在しません再度確認してください。'
+        )
 
 
 def authenticate_user(username: str, password: str):
