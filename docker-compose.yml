@@ -11,6 +11,6 @@ services:
       - "8000:8000"
     restart: always
     command: > 
-      bash -c 'python -m pip install --upgrade pip &&
-      pip install -r requirements.txt &&
+      bash -c 'pip install pipenv &&
+      pipenv install --system --deploy &&
       uvicorn main:app --host 0.0.0.0'
