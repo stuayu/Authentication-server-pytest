@@ -7,7 +7,7 @@ from model.auth_m import *
 from db.acsess import cur, search_username
 import yaml
 
-with open('config.yml') as file:
+with open('config.yml', encoding='utf8') as file:
     config = yaml.safe_load(file.read())
 
 # to get a string like this run:
