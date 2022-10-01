@@ -18,6 +18,8 @@ SECRET_KEY = config['token']['backend']['SECRET_KEY']
 ALGORITHM = config['token']['backend']['ALGORITHM']
 # トークンの有効期限(min)
 ACCESS_TOKEN_EXPIRE_MINUTES = config['token']['backend']['expires']
+# トークンの有効期限(min)
+ACCESS_TOKEN_EXPIRE_MINUTES_REFLESH = config['token']['backend']['refresh']
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 

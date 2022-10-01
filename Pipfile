@@ -12,6 +12,7 @@ python-multipart = "*"
 wheel = "*"
 pyyaml = "*"
 aiofiles = "*"
+requests = "*"
 
 [dev-packages]
 

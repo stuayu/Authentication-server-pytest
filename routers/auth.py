@@ -49,12 +49,10 @@ async def login_for_access_token(response: Response,form_data: OAuth2PasswordReq
             detail="ユーザー名かパスワードが違います。大文字小文字をよく確かめ入力してください。",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user.username}, expires_delta=access_token_expires
-    )
+    access_token,refresh_token = await create_token_data(user)
     #data = {"access_token": access_token, "token_type": "bearer"}
     response.set_cookie(key='token',value=access_token,httponly=True,secure=True,expires=config['token']['browser']['expires'])
+    response.set_cookie(key='refresh_token', value=refresh_token, httponly=True,secure=True, expires=config['token']['browser']['refresh'])
     data = '''
     <!DOCTYPE html>
         <html lang="ja">
@@ -89,14 +87,83 @@ async def read_own_items(current_user: User = Depends(get_current_active_user)):
 async def header_ck(request: Request,response: Response):
     """ヘッダーのtokenを読み取りログイン状態を確認する"""
     token = request.cookies.get('token')
-    if token is None:
+    refresh_token = request.cookies.get('refresh_token')
+    if token is None or type(token) is not str:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
-    pre_data = await get_current_user(token=token)
+    if refresh_token is None or type(refresh_token) is not str:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+    await get_current_user(token=token)
+    response.status_code=status.HTTP_202_ACCEPTED
+    #current_user: User = await get_current_active_user(pre_data)
+    #access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    #access_token = create_access_token(
+    #    data={"sub": current_user.username}, expires_delta=access_token_expires
+    #)
+    ##data = {"access_token": access_token, "token_type": "bearer"}
+    #response.set_cookie(key='token',value=access_token,httponly=True,secure=True,expires=config['token']['browser']['expires'])
+    ##print(current_user)
+
+@router.get("/refresh",response_class=HTMLResponse)
+async def refresh(request: Request,response: Response):
+    "リフレッシュトークンでトークンを再発行"
+    token = request.cookies.get('refresh_token')
+    try:
+        if type(token) is not str:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+        pre_data = await get_current_user(token=token)
+    except HTTPException:
+        data = '''
+        <!DOCTYPE html>
+            <html lang="ja">
+            <head>
+            <meta charset="uft-8">
+            <script>
+            setTimeout("location.href='/auth/login/index.html'",10*1);
+            </script>
+            <title>ページリダイレクト</title>
+            </head>
+            <body>
+            <h1>リダイレクト</h1>
+            <p>1秒後にジャンプします。<br>
+            ジャンプしない場合は、以下のURLをクリックしてください。</p>
+            <p><a href="/auth/login/index.html">移転先のページ</a></p>
+            </body>
+            </html>
+        '''
+        return data
     current_user: User = await get_current_active_user(pre_data)
+    access_token,refresh_token = await create_token_data(current_user)
+    response.set_cookie(key='token',value=access_token,httponly=True,secure=True,expires=config['token']['browser']['expires'])
+    response.set_cookie(key='refresh_token', value=refresh_token, httponly=True,secure=True, expires=config['token']['browser']['refresh'])
+    data = '''
+        <!DOCTYPE html>
+            <html lang="ja">
+            <head>
+            <meta charset="uft-8">
+            <script>
+            setTimeout("location.href='/'",10*1);
+            </script>
+            <title>ページリダイレクト</title>
+            </head>
+            <body>
+            <h1>リダイレクト</h1>
+            <p>1秒後にジャンプします。<br>
+            ジャンプしない場合は、以下のURLをクリックしてください。</p>
+            <p><a href="/">移転先のページ</a></p>
+            </body>
+            </html>
+        '''
+    return data
+
+async def create_token_data(user):
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": current_user.username}, expires_delta=access_token_expires
+        data={"sub": user.username}, expires_delta=access_token_expires
     )
-    #data = {"access_token": access_token, "token_type": "bearer"}
-    response.set_cookie(key='token',value=access_token,httponly=True,secure=True,expires=config['token']['browser']['expires'])
-    #print(current_user)
+    refresh_token_expires = timedelta(
+        minutes=ACCESS_TOKEN_EXPIRE_MINUTES_REFLESH)
+    refresh_token = create_access_token(
+        data={"sub": user.username}, expires_delta=refresh_token_expires
+    )
+
+    return access_token,refresh_token
